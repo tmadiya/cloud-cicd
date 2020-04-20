@@ -1,0 +1,157 @@
+<div class="col-md-5 p-0 bg-white h-md-100 loginarea">
+
+    <!-- Login Form Starts Here  -->
+    <div class="d-md-flex align-items-center h-md-95 p-3 justify-content-center">
+      <form class="no-border p-3" style="width: 90%;">
+
+        <div class="row">
+          <div class="col">
+            <div class="login-welcome">
+              <h4 style="color: #0088c4; font-size: x-large;"><b>Sign Up</b></h4>
+              <h6 style="color: grey; font-size: large;">Join the T-Zero Producer Community</h6>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group login-input" [formGroup]="registration">
+          <div class="row">
+            <div class="col">
+              <label class="form-label-size"><b>Phone Number</b></label><br>
+              <input type="text" name="PhoneNumber" class="form-control" name="PhoneNumber"
+                formControlName="PhoneNumber" [ngClass]="{'is-invalid':f.PhoneNumber.errors && f.PhoneNumber.touched}"><br>
+              <span *ngIf="f.PhoneNumber.errors?.required && f.PhoneNumber.touched" style="color: red;">
+                Phone Number is
+                required</span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+
+       
+
+        <div class="form-group login-input" [formGroup]="registration">
+          <div class="row">
+            <div class="col-sm-12 col-md-12 col-lg-6">
+              <label><b>Password</b></label>
+
+              <div class="form-group login-input" [formGroup]="registration">
+                <input type="password" name="Password" class="form-control" formControlName="Password" minlength="8"
+                  ngModel passwordToggle [ngClass]="{'is-invalid':f.Password.errors && f.Password.touched}">
+
+              </div>
+
+            </div>
+
+            <div class="col-sm-12 col-md-12 col-lg-6">
+              <label><b>Confirm Password</b></label>
+
+
+              <div class="form-group login-input" [formGroup]="registration">
+                <input type="password" class="form-control" name="ConfirmPassword" required
+                  formControlName="ConfirmPassword" ngModel passwordToggle
+                  [ngClass]="{'is-invalid':f.ConfirmPassword.errors && f.ConfirmPassword.touched}">
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        <div class="card" style="color: red;"
+          *ngIf="f.Password.touched&&f.Password.hasError('required')||f.Password.hasError('hasNumber')||f.Password.hasError('hasNumber')||f.Password.hasError('minlength')||f.Password.hasError('hasSpecialCharacters') || f.Password.hasError('hasCapitalCase')">
+          &nbsp;&nbsp;Password must:
+          <br>
+          <label
+            [ngClass]="f.Password.hasError('required') ||f.Password.hasError('minlength')  ? 'text-danger' : 'text-success'">
+
+            <i class="material-icons" style="font-size: 12px">{{f.Password.hasError('required') ||
+                                               f.Password.hasError('minlength') ? 'cancel' :
+                                             'check_circle'}}</i>
+            <span>Must have 8 characters</span>
+          </label>
+          <label
+            [ngClass]="f.Password.hasError('required') || f.Password.hasError('hasNumber')  ? 'text-danger' : 'text-success'">
+            <i class="material-icons" style="font-size: 12px">{{f.Password.hasError('required') ||
+                                              f.Password.hasError('hasNumber') ? 'cancel' :
+                                               'check_circle' }}</i>
+            Must contain at least 1 number!
+          </label>
+          <label
+            [ngClass]="f.Password.hasError('required') || f.Password.hasError('hasCapitalCase')  ? 'text-danger' : 'text-success'">
+            <i class="material-icons" style="font-size: 12px">{{ f.Password.hasError('required') ||
+                                                 f.Password.hasError('hasCapitalCase') ? 'cancel' :
+                                                 'check_circle' }}</i>
+            Must contain at least 1 in Capital Case!
+          </label>
+          <label
+            [ngClass]="f.Password.hasError('required') || f.Password.hasError('hasSmallCase')  ? 'text-danger' : 'text-success'">
+            <i class="material-icons" style="font-size: 12px">{{ f.Password.hasError('required') ||
+                                                  f.Password.hasError('hasSmallCase') ? 'cancel' :
+                                                  'check_circle' }}</i>
+            Must contain at least 1 Letter in Small Case!
+          </label>
+
+          <label
+            [ngClass]="f.Password.hasError('required') || f.Password.hasError('hasSpecialCharacters') ? 'text-danger' : 'text-success'">
+            <i class="material-icons" style="font-size: 12px">{{ f.Password.hasError('required') ||
+                                                    f.Password.hasError('hasSpecialCharacters') ? 'cancel' :
+                                                    'check_circle' }}</i>
+            Must contain at least 1 Special Character!
+          </label>
+          <!-- </div> -->
+        </div>
+        <div class="col-6">
+          <div *ngIf="f.ConfirmPassword.errors?.mustMatch">
+            <label style="width: 100%;
+                              margin-top: .25rem;
+                              font-size: 80%;
+                              color: #dc3545;"> Password doesn't match</label>
+
+          </div>
+        </div>
+
+
+
+        <div class="row">
+          <div class="col">
+            <div class="sign-up-spacing" style="max-width: 70%; ">
+              <div *ngIf="msg=='SUCCESS'">
+                  {{msg}}
+              </div>
+              <div ><button type="submit"
+                  class="btn btn-primary btn-round btn-block shadow-sm"
+                  (click)="onSubmit()">Sign Up</button></div>
+            </div>
+          </div>
+        </div>
+
+
+        <div *ngIf="msg=='Registration Failure'" style="color:red;font: Telkomregular;text-align: center;">
+          {{msg}}
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <div class="input sign-up-spacing" style="text-align: center;">
+              &nbsp;Already have an account?&nbsp;<a [routerLink]="['/login']" routerLinkActive="router-link-active"
+                style="color: rgb(0, 169, 224)" (click)="firelogin()">Login</a>
+              &nbsp;
+            </div>
+
+          </div>
+
+        </div>
+
+
+      </form>
+
+    </div>
+    <!-- Login Form Starts Here  -->
+
+  </div>
+

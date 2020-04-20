@@ -1,0 +1,67 @@
+
+<div class="d-md-flex align-items-center h-md-95 p-3 justify-content-center">
+    <form class="no-border p-3" style="width: 90%;">
+
+      <div class="row">
+        <div class="col">
+
+          <div class="login-welcome">
+            <h3 style="color: #0088c4; font-size: x-large;"><b>Login</b></h3>
+            <h5 style="color: grey;font-size: large;">Welcome back! Login to access your account.</h5>
+          </div>
+
+        </div>
+      </div>
+
+
+     
+        <div *ngIf="loginFail" style="color:red;font: Telkomregular">
+          {{loginFail}}
+        </div>
+        <div *ngIf="loginSuccess==true" style="color:green;font: Telkomregular">
+          Success
+        </div>
+        <div class="login-input" [formGroup]="login">
+        <div class="login-input">
+          <label><b>Email</b></label>
+        </div>
+<div class="login-input">
+        <input type="email" name="Email" class="form-control" formControlName="Email_Address"
+          [ngClass]="{'is-invalid':f.Email_Address.errors && f.Email_Address.touched}" placeholder="E-mail"
+          required="">
+        <div *ngIf="f.Email_Address.errors?.required && f.Email_Address.touched" style="color: red;" class="invalid-feedback">E-mail is
+          required.</div>
+        <div *ngIf="f.Email_Address.errors?.pattern " style="color: red;"  class="invalid-feedback">E-mail is not in the correct
+          format.</div>
+        </div>
+      </div>
+
+      <div>
+        <label><b>Password</b></label>
+      </div>
+
+      <div class="login-input" [formGroup]="login">
+        <input type="password" class="form-control" name="Password" placeholder="Password" ngModel passwordToggle
+          required="" formControlName="Password" [ngClass]="{'is-invalid':f.Password.errors && f.Password.touched}">
+
+        <p *ngIf="f.Password.errors?.required && f.Password.touched" class="invalid-feedback">Password is required.
+        </p>
+      </div>
+
+ 
+
+      <button type="submit" class="btn btn-primary btn-round btn-block shadow-sm" [disabled]="!login.valid"
+        (click)="onSubmit()">Log in</button>
+
+<div class="login-input">
+      <small ><a [routerLink]='["/forgotpassword"]'
+          routerLinkActive="router-link-active" class="text-gray">Forgot
+          your password?</a></small>
+        </div>
+      <div class="login-input" >
+        Don't have an account?<a [routerLink]='["/registration"]' routerLinkActive="router-link-active"
+          style="color: #0088c4">&nbsp;Sign Up</a> &nbsp;
+      </div>
+    </form>
+
+  </div>

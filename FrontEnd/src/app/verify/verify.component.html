@@ -1,0 +1,19 @@
+<h4 class="heading">Verify Your Number</h4>
+<small class="text-font" style="color: #646363; font-size: 13px;">You’re almost done! Please enter the 6 digit code we sent to you on {{MobileNumber}} to verify your number.</small>
+<hr class="my-4">
+<div *ngIf = 'isError' class="danger">
+  <small>{{message}}</small>
+</div>
+
+<div class="form-label-group">
+    <input clearInput type="phone" [(ngModel)]="verifyNumber" 
+      style="font-size:35px; text-align:center" appSpace (ngModelChange)="evaulateOTP($event)" placeholder=' 0 0 0 0 0 0' class="text-font">
+    
+  </div>
+
+  <div *ngIf="msg=='Registration Success'" style="color: green;">
+    {{msg}}
+</div>
+<div *ngIf="msg=='Fail'" style="color: red;">
+    Incorrect OTP entered. Please try again.
+</div>

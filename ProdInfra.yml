@@ -1,0 +1,287 @@
+AWSTemplateFormatVersion: '2010-09-09'
+# *** Change this to something useful for you!
+Description: github-codepipelinev1
+Parameters:
+  TargetS3Bucket:
+    Type: String
+    Default: pipe-auto-1
+    AllowedPattern: "[A-Za-z0-9-]+"
+  GitHubOAuthToken:
+    Type: String
+    Default: "e6b2f8a0de44ca792b7792aab41467a67dc0b48d"
+    NoEcho: true
+    MinLength: 40
+    MaxLength: 40
+    AllowedPattern: '[a-z0-9]*'
+  # *** The remaining parameters should either be:.
+  # - overridden via changing "Default" here (PREFERABLE, since then they're in source control)
+  # - or you can pass them in when creating / updating the stack
+  # *** The owner of the Github repo for this application.
+  GitHubOwner:
+    Type: String
+    Default: Vishnuranganathan
+  ProjectID:
+    Type: String
+    Default: 12345
+  DestinationLambdaAlias:
+    Type: String
+    Default: defaultalias
+  DestinationLambdaARN:
+    Type: String
+    Default: "arn:aws:lambda:ap-south-1:040087672732:function:CICD-Lambda-Dev"
+  DestinationLambdaTestARN:
+    Type: String
+    Default: "arn:aws:lambda:ap-south-1:040087672732:function:CICD-Lambda-Test"
+  DestinationLambdaProdARN:
+    Type: String
+    Default: "arn:aws:lambda:ap-south-1:040087672732:function:CICD-Lambda-Prod"
+  SrcFolderPathBuildSpecFile:
+    Type: String
+    Default: buildspec.yml
+  GitHubRepo:
+    Type: String
+    Default: CICD-Demo
+    AllowedPattern: "[A-Za-z0-9-]+"
+  GitHubBranch:
+    Type: String
+    Default: "Dev"
+    AllowedPattern: "[A-Za-z0-9-]+"
+  GitHubBranchTest:
+    Type: String
+    Default: "Test"
+    AllowedPattern: "[A-Za-z0-9-]+"
+  GitHubBranchProd:
+    Type: String
+    Default: "Prod"
+    AllowedPattern: "[A-Za-z0-9-]+"
+  # *** The stack name for the actual application we're deploying
+  ApplicationStackName:
+    Type: String
+    Default: github-codepipeline-startkit-v1
+    AllowedPattern: "[A-Za-z0-9-]+"
+Resources:
+  PipelineArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration: 
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactsBucket
+      RestartExecutionOnUpdate: true
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+      - Name: Checkout-Env-Prod-Source
+        Actions:
+        - Name: Source
+          InputArtifacts: []
+          ActionTypeId:
+            Category: Source
+            Owner: ThirdParty
+            Version: 1
+            Provider: GitHub
+          OutputArtifacts:
+          - Name: SourceCodeProd
+          Configuration:
+            Owner: !Ref GitHubOwner
+            Repo: !Ref GitHubRepo
+            Branch: !Ref GitHubBranchProd
+            PollForSourceChanges: false
+            OAuthToken: !Ref GitHubOAuthToken
+          RunOrder: 4
+      #Approval
+      - Name: Approval_For_Prod_Deployment
+        Actions:
+        - Name: Approval
+          ActionTypeId:
+            Category: Approval
+            Owner: AWS
+            Version: '1'
+            Provider: Manual
+          Configuration:
+            NotificationArn: arn:aws:sns:ap-south-1:040087672732:starterkit-1
+            #ExternalEntityLink: http://example.com
+            CustomData: The latest changes include feedback on Starter-Kit.
+          RunOrder: 2
+      - Name: BuildLambdaCodeProd
+        Actions:
+        - Name: BuildDeployLambda
+          ActionTypeId:
+            Category: Build
+            Owner: AWS
+            Provider: CodeBuild
+            Version: '1'
+          RunOrder: 2
+          Configuration:
+            ProjectName:
+              Ref: CodeBuildProjectProd
+          OutputArtifacts:
+          - Name: buildingcodeProd
+          InputArtifacts:
+          - Name: SourceCodeProd
+  CodeBuildProjectProd:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        EncryptionDisabled: false
+        Location: !Ref PipelineArtifactsBucket
+        Name: SampleNodeBuild
+        NamespaceType: BUILD_ID
+        OverrideArtifactName: true
+        Packaging: NONE
+        Path: SampleJavaBuild/JavaSample
+        Type: S3
+      ServiceRole: 'arn:aws:iam::040087672732:role/test-role-vishnu'
+      Description: This is code build used to build Node JS
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: "aws/codebuild/standard:3.0"
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+        - Name: DestinationLambdaARN
+          Value:
+            Ref: DestinationLambdaProdARN
+        - Name: DestinationLambdaAlias
+          Value:
+            Ref: DestinationLambdaAlias
+      Name: "byop-NodeJS-build-codebuild-Prod"
+      LogsConfig:
+        S3Logs:
+          Status: ENABLED
+          Location: continuousintegration-dev/SampleJavaBuild/Logs
+      Source:
+        BuildSpec:
+          Ref: SrcFolderPathBuildSpecFile
+        Location: continuousintegration-dev/LambdaDeployment/CodeBuildNodeSample.zip
+        Type: S3
+    # 'GithubWebhook' satisfies two requirements:
+  # -- Means that updates are pushed from GitHub, rather than AWS having to poll
+  # -- Means we can filter for required changes
+  GithubWebhook:
+    Type: 'AWS::CodePipeline::Webhook'
+    Properties:
+      Authentication: GITHUB_HMAC
+      # Authentication: UNAUTHENTICATED
+      AuthenticationConfiguration:
+        SecretToken: !Ref GitHubOAuthToken
+      RegisterWithThirdParty: 'true'
+      Filters:
+      - JsonPath: "$.ref"
+        MatchEquals: refs/heads/{Branch}
+      TargetPipeline: !Ref CodePipeline
+      TargetAction: Source
+      TargetPipelineVersion: !GetAtt CodePipeline.Version
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codepipeline.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess #TODO: Reduce permissions
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactsBucket
+      RestartExecutionOnUpdate: true
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+      - Name: Checkout-Env-Prod-Source
+        Actions:
+        - Name: Source
+          InputArtifacts: []
+          ActionTypeId:
+            Category: Source
+            Owner: ThirdParty
+            Version: 1
+            Provider: GitHub
+          OutputArtifacts:
+          - Name: SourceCodeProdFrontEnd
+          Configuration:
+            Owner: !Ref GitHubOwner
+            Repo: !Ref GitHubRepo
+            Branch: !Ref GitHubBranchProd
+            PollForSourceChanges: false
+            OAuthToken: !Ref GitHubOAuthToken
+          RunOrder: 4
+      #Approval
+      - Name: Approval_For_Prod_Deployment
+        Actions:
+        - Name: Approval
+          ActionTypeId:
+            Category: Approval
+            Owner: AWS
+            Version: '1'
+            Provider: Manual
+          Configuration:
+            NotificationArn: arn:aws:sns:ap-south-1:040087672732:starterkit-1
+            #ExternalEntityLink: http://example.com
+            CustomData: The latest changes include feedback on Starter-Kit.
+          RunOrder: 2
+      - Name: BuildFrontEndProd
+        Actions:
+        - Name: BuildFrontEndCode
+          ActionTypeId:
+            Category: Build
+            Owner: AWS
+            Provider: CodeBuild
+            Version: '1'
+          RunOrder: 2
+          Configuration:
+            ProjectName:
+              Ref: CodeBuildProjectFrontEnd
+          OutputArtifacts:
+          - Name: builded
+          InputArtifacts:
+          - Name: SourceCodeProdFrontEnd
+  CodeBuildProjectFrontEnd:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        EncryptionDisabled: false
+        Location: !Ref PipelineArtifactsBucket
+        Name: SampleNodeBuild
+        NamespaceType: BUILD_ID
+        OverrideArtifactName: true
+        Packaging: NONE
+        Path: SampleJavaBuild/JavaSample
+        Type: S3
+      ServiceRole: 'arn:aws:iam::040087672732:role/test-role-vishnu'
+      Description: This is code build used to build Node JS
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: "aws/codebuild/standard:3.0"
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+        - Name: TargetS3Bucket
+          Value:
+            Ref: TargetS3Bucket
+        - Name: DestinationLambdaAlias
+          Value:
+            Ref: DestinationLambdaAlias
+      Name: "byop-build-FronEnd-Prod"
+      LogsConfig:
+        S3Logs:
+          Status: ENABLED
+          Location: continuousintegration-dev/SampleJavaBuild/Logs
+      Source:
+        BuildSpec:
+          Ref: BuildSpecFileFrontEnd
+        Location: continuousintegration-dev/LambdaDeployment/CodeBuildNodeSample.zip
+        Type: S3 
+    # 'GithubWebhook' satisfies two requirements:
+  # -- Means that updates are pushed from GitHub, rather than AWS having to poll
+  # -- Means we can filter for required changes

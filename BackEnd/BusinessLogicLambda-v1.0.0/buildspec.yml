@@ -1,0 +1,38 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - echo Nothing to do in the install phase...updated.......
+  pre_build:
+    commands:
+      - echo pre_build check for docker modules
+  build:
+    commands:
+      - echo Build started on `date`
+  post_build:
+    commands:
+      - echo Build completed test on `date`
+      - ls -al
+      - pwd
+      - zip -r -m source.zip .
+      - echo $DestinationLambdaAlias
+      - |
+          if [ -z "$DestinationLambdaAlias" ];
+          then
+          aws lambda update-function-code --function-name $DestinationLambdaARN --zip-file fileb://source.zip
+          else
+          aws lambda update-function-code --function-name $DestinationLambdaARN --zip-file fileb://source.zip
+       
+          version=`aws lambda publish-version --function-name $DestinationLambdaARN --query Version | tr -d '"'`
+          echo here $version
+          alias=`aws lambda get-alias --function-name $DestinationLambdaARN --name $DestinationLambdaAlias --query Name| tr -d '"'`
+          echo here $alias
+          if [ "$alias" = "$DestinationLambdaAlias" ];
+          then
+          echo inside if
+          aws lambda update-alias --function-name $DestinationLambdaARN --function-version $version --name $DestinationLambdaAlias
+          else
+          echo inside else
+          aws lambda create-alias --function-name $DestinationLambdaARN --function-version $version --name $DestinationLambdaAlias
+          fi
+          fi

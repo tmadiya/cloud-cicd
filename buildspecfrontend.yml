@@ -1,0 +1,38 @@
+version: 0.2
+phases:
+  install:
+    commands:
+    # Download and Install NodeJS 8.0
+  pre_build:
+    commands:
+      - echo pre_build check for docker modules..
+  build:
+    commands:
+      - echo Build started on `date`
+      # - cd ~
+      - curl -sL https://deb.nodesource.com/setup_10.x -o nodesource_setup.sh
+      - bash nodesource_setup.sh
+      - apt-get install nodejs -y
+      - node -v
+      - npm -v
+      - npm install -g @angular/cli
+      - ng version
+  post_build:
+    commands:
+      - echo Build  completed test  on `date`
+      - ls -al
+      - pwd
+      - cd FrontEnd
+      - npm i --only=dev
+      - ng config -g cli.warnings.versionMismatch false
+      - npm install
+      # - npm install --save @angular-devkit/build-angular
+      - ng build
+      - ls -al
+      - cd dist
+      - cd Accelerator
+      - aws s3 sync --delete . "s3://$TargetS3Bucket"
+    artifacts:
+      files:
+        - FrontEnd/index.js
+      discard-paths: yes
