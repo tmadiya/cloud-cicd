@@ -10,7 +10,7 @@ Parameters:
     Default: buildspecfrontend.yml
   GitHubOAuthToken:
     Type: String
-    Default: "e6b2f8a0de44ca792b7792aab41467a67dc0b48d"
+    Default: "a97e1a11e986681b5195380051cf99f1e6e71aee"
     NoEcho: true
     MinLength: 40
     MaxLength: 40
@@ -21,7 +21,7 @@ Parameters:
   # *** The owner of the Github repo for this application.
   GitHubOwner:
     Type: String
-    Default: Vishnuranganathan
+    Default: tmadiya
   ProjectID:
     Type: String
     Default: 123456
@@ -42,7 +42,7 @@ Parameters:
     Default: buildspec.yml
   GitHubRepo:
     Type: String
-    Default: CICD-Demo
+    Default: cloud-cicd
     AllowedPattern: "[A-Za-z0-9-]+"
   GitHubBranch:
     Type: String
